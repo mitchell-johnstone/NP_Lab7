@@ -57,11 +57,10 @@ def main():
 
     client_socket.close()
 
-
 def get_file_block_count(filename):
     """
     Determines the number of TFTP blocks for the given file
-    :param filename: THe name of the file
+    :param filename: The name of the file
     :return: The number of TFTP blocks for the file or -1 if the file does not exist
     """
     try:
@@ -116,6 +115,26 @@ def socket_setup():
 ####################################################
 # Write additional helper functions starting here  #
 ####################################################
+
+def handle_ack(message, file_name):
+    """
+    Parses the acknowledgement into its opcode and block num. Gets the data block that needs to be sent next.
+    If the final ack is received for the last data block, it returns and empty bytes string.
+    :param message: the entire acknowledgement that was received
+    :param file_name: the file name to use for getting the file block and block count
+    :return: data block- opcode of 3 + the next block num + the next data block
+    :authors: Kayla Yakimisky, Mitchell Johnstone
+    """
+    opcode = message[:2]
+    block_num = message[2:]
+    block_num_int = int.from_bytes(block_num, 'big')
+    num_blocks = get_file_block_count(file_name)
+    if block_num < num_blocks:
+        block_num_int += 1
+        next_block = get_file_block(file_name, block_num_int)
+        block_num_out = block_num_int.to_bytes(2, 'big')
+        return b'\x00\x03' + block_num_out + next_block
+    return b''
 
 
 main()
