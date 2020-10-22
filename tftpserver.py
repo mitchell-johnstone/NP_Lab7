@@ -158,8 +158,19 @@ def handle_ack(message, file_name):
     return b''
 
 
-def handle_error(file_name, data_socket):
-    return
+def handle_error(message):
+    """
+    Takes in an error message, parses it into its opcode, error code, and error message. Prints the error code and message before quitting.
+    :param message: the entire error message received
+    :return: void
+    :authors: Kayla Yakimisky, Mitchell Johnstone
+    """
+    opcode = message[:2]
+    err_code = message[2:4]
+    err_msg = message[4:len(message) - 1]
+    print('Error code: ', err_code)
+    print('Error message: ', err_msg)
+    quit()
 
 
 def send_ack(byte):
