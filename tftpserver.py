@@ -48,6 +48,10 @@ def main():
     #   functions as needed                            #
     ####################################################
 
+    file_name = ''
+    s = socket_setup()
+
+
 
 
 
@@ -135,6 +139,30 @@ def handle_ack(message, file_name):
         block_num_out = block_num_int.to_bytes(2, 'big')
         return b'\x00\x03' + block_num_out + next_block
     return b''
+
+
+def handle_client_message(message, file_name, data_socket):
+    return
+
+
+def handle_read(data_socket):
+    return
+
+
+def handle_write(data_socket):
+    return
+
+
+def handle_data(file_name, data_socket):
+    return
+
+
+def handle_error(file_name, data_socket):
+    return
+
+
+def send_ack(byte):
+    return
 
 
 main()
