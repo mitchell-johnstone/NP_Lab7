@@ -146,9 +146,12 @@ def handle_client_message(message, file_name):
     return message, file_name
 
 
-def handle_read():
-    return
-
+def handle_read(data_socket):
+    rrq = data_socket.recvfrom()
+    opcode = rrq[:2]
+    rrq_no_opcode = rrq[2:]
+    filename = rrq_no_opcode[:rrq_no_opcode.find('\x00')]
+    mode 
 
 def handle_write():
     return
