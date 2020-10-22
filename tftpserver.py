@@ -52,10 +52,9 @@ def main():
     file_name = ''
     s = socket_setup()
     client_message, client_address = s.recvfrom(MAX_UDP_PACKET_SIZE)
-    while True:
+    response_message = b'temp'
+    while response_message:
         response_message, file_name = handle_client_message(client_message, file_name)
-        if response_message == b'':
-            break
         s.sendto(response_message, (client_address, TFTP_PORT))
         client_message, client_address = s.recvfrom(MAX_UDP_PACKET_SIZE)
 
