@@ -120,6 +120,23 @@ def socket_setup():
 # Write additional helper functions starting here  #
 ####################################################
 
+
+
+def handle_client_message(message, file_name, data_socket):
+    return
+
+
+def handle_read(data_socket):
+    return
+
+
+def handle_write(data_socket):
+    return
+
+
+def handle_data(file_name, data_socket):
+    return
+
 def handle_ack(message, file_name):
     """
     Parses the acknowledgement into its opcode and block num. Gets the data block that needs to be sent next.
@@ -139,22 +156,6 @@ def handle_ack(message, file_name):
         block_num_out = block_num_int.to_bytes(2, 'big')
         return b'\x00\x03' + block_num_out + next_block
     return b''
-
-
-def handle_client_message(message, file_name, data_socket):
-    return
-
-
-def handle_read(data_socket):
-    return
-
-
-def handle_write(data_socket):
-    return
-
-
-def handle_data(file_name, data_socket):
-    return
 
 
 def handle_error(file_name, data_socket):
