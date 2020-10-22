@@ -36,6 +36,7 @@ MAX_UDP_PACKET_SIZE = 65536
 def main():
     """
     Processes a single TFTP request
+    :author: Mitchell Johnstone
     """
 
     client_socket = socket_setup()
@@ -50,16 +51,20 @@ def main():
 
     file_name = ''
     s = socket_setup()
-
-
-
-
+    client_message, client_address = s.recvfrom(MAX_UDP_PACKET_SIZE)
+    while True:
+        response_message, file_name = handle_client_message(client_message, file_name)
+        if response_message == b'':
+            break
+        s.sendto(response_message, (client_address, TFTP_PORT))
+        client_message, client_address = s.recvfrom(MAX_UDP_PACKET_SIZE)
 
     ####################################################
     # Your code ends here                              #
     ####################################################
 
     client_socket.close()
+
 
 def get_file_block_count(filename):
     """
@@ -122,7 +127,7 @@ def socket_setup():
 
 
 
-def handle_client_message(message, file_name, data_socket):
+def handle_client_message(message, file_name):
     return
 
 
@@ -132,14 +137,12 @@ def handle_read(data_socket):
     rrq_no_opcode = rrq[2:]
     filename = rrq_no_opcode[:rrq_no_opcode.find('\x00')]
     mode 
+
+def handle_write():
     return
 
 
-def handle_write(data_socket):
-    return
-
-
-def handle_data(file_name, data_socket):
+def handle_data(file_name):
     return
 
 def handle_ack(message, file_name):
@@ -162,6 +165,8 @@ def handle_ack(message, file_name):
         return b'\x00\x03' + block_num_out + next_block
     return b''
 
+def handle_error(file_name):
+    return
 
 def handle_error(message):
     """
