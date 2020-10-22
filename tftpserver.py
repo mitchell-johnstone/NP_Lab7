@@ -48,6 +48,10 @@ def main():
     #   functions as needed                            #
     ####################################################
 
+    file_name = ''
+    s = socket_setup()
+
+
 
 
 
@@ -116,6 +120,30 @@ def socket_setup():
 ####################################################
 # Write additional helper functions starting here  #
 ####################################################
+
+
+def handle_client_message(message, file_name, data_socket):
+    return
+
+
+def handle_read(data_socket):
+    return
+
+
+def handle_write(data_socket):
+    return
+
+
+def handle_data(file_name, data_socket):
+    return
+
+
+def handle_error(file_name, data_socket):
+    return
+
+
+def send_ack(byte):
+    return
 
 
 main()
