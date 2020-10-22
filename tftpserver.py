@@ -3,8 +3,9 @@
 - Fall 2020
 - Lab 7
 - Names:
-  -
-  -
+  - Mitchell Johnstone
+  - Jonathan Keane
+  - Kayla Yakimisky
 
 A Trivial File Transfer Protocol Server
 
