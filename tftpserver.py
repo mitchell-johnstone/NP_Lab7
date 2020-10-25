@@ -137,7 +137,7 @@ def handle_client_message(message, file_name):
     opcode = message[:2]
     message = message[2:]
     if opcode == 1:
-        #handle_read
+        handle_read(message)
     elif opcode == 5:
         handle_error(message)
     elif opcode == 4:
@@ -150,20 +150,43 @@ def handle_read(message):
     Take a bytes object that does not contain the opcode and get 
     the file and the first block based of the file based on the 
     message's filename.
-    :param message: bytes objects that 
-
+    :param message: the request  without an opcode as a bytes object
+    :return: the filename read from and the next request line
+    :author: Jonny Keane
     """
     filename = message[:message.find(b'\x00')]
-    if filename != working:
-        return b'', THE_ERROR_CODE_ENTIRE_SEND
-    return filename, BLOCK_INFO + get_file_block(filename, 1)
+    if os.path.isfile(filename.decode()):
+        return filename, b'\x00\x05\x00\x01File not found.\x00' 
+    return filename, b'\x00\x03\x00\x01' + get_file_block(filename, 1)
 
-def handle_write():
-    return
+def handle_write(message):
+    """
+    Takes a bytes obect that does not contain opcode and get the file
+    to write to and make the acknowledgement request for the first data
+    block of the file.
+    :param message: the request without an opcode as a bytes object
+    :return: the filename to write to and the next request line
+    :author: Jonny Keane
+    """
+    filename = message[:message.find(b'\x00')]
+    #do we have to check that the file is not already in the directory?
+    file = open(filename, "wb")
+    return filename, b'\x00\x04\x00\x01'
 
 
-def handle_data(file_name):
-    return
+def handle_data(message, file_name):
+    """
+    Takes the filename and append the new bytes to the given file.
+    Return the next request line and return if more requests are 
+    follow.
+    :param message: the request without an opcode as a bytes object
+    :return: boolean saying whether there are more requests to come
+             and the next request line (acknowledgement)
+    :author: Jonny Keane
+    """
+    block_number = message[:2]
+    block_data = message[2:]
+    return bool(len(block_data) == 512), b'\x00\x03' + block_number
 
 
 def handle_ack(message, file_name):
@@ -193,7 +216,7 @@ def handle_error(message):
     :return: void
     :authors: Kayla Yakimisky, Mitchell Johnstone
     """
-    opcode = message[]
+    # opcode = message[]
     err_code = message[:2]
     err_msg = message[2:len(message) - 1]
     print('Error code: ', err_code)
