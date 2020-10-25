@@ -52,10 +52,9 @@ def main():
     file_name = ''
     s = socket_setup()
     client_message, client_address = s.recvfrom(MAX_UDP_PACKET_SIZE)
-    while True:
+    response_message = b'temp'
+    while response_message:
         response_message, file_name = handle_client_message(client_message, file_name)
-        if response_message == b'':
-            break
         s.sendto(response_message, (client_address, TFTP_PORT))
         client_message, client_address = s.recvfrom(MAX_UDP_PACKET_SIZE)
 
@@ -128,7 +127,22 @@ def socket_setup():
 
 
 def handle_client_message(message, file_name):
-    return
+    """
+    Takes in the message from the client and the file name. Calls the appropriate method to either read a request, handle an error, or read an acknowledgement.
+    :param message: the message received from the client
+    :param file_name: the name of the file from the client
+    :return: the message, modified by the handle_ack or handle_read method, and the file name, which may be modified by the handle_read method.
+    :author: Kayla Yakimisky
+    """
+    opcode = message[:2]
+    message = message[2:]
+    if opcode == 1:
+        #handle_read
+    elif opcode == 5:
+        handle_error(message)
+    elif opcode == 4:
+        message = handle_ack(message, file_name)
+    return message, file_name
 
 
 def handle_read(message):
@@ -151,6 +165,7 @@ def handle_write():
 def handle_data(file_name):
     return
 
+
 def handle_ack(message, file_name):
     """
     Parses the acknowledgement into its opcode and block num. Gets the data block that needs to be sent next.
@@ -160,8 +175,7 @@ def handle_ack(message, file_name):
     :return: data block- opcode of 3 + the next block num + the next data block
     :authors: Kayla Yakimisky, Mitchell Johnstone
     """
-    opcode = message[:2]
-    block_num = message[2:]
+    block_num = message
     block_num_int = int.from_bytes(block_num, 'big')
     num_blocks = get_file_block_count(file_name)
     if block_num < num_blocks:
@@ -171,8 +185,6 @@ def handle_ack(message, file_name):
         return b'\x00\x03' + block_num_out + next_block
     return b''
 
-def handle_error(file_name):
-    return
 
 def handle_error(message):
     """
@@ -181,9 +193,9 @@ def handle_error(message):
     :return: void
     :authors: Kayla Yakimisky, Mitchell Johnstone
     """
-    opcode = message[:2]
-    err_code = message[2:4]
-    err_msg = message[4:len(message) - 1]
+    opcode = message[]
+    err_code = message[:2]
+    err_msg = message[2:len(message) - 1]
     print('Error code: ', err_code)
     print('Error message: ', err_msg)
     quit()
