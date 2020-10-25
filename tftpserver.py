@@ -49,6 +49,8 @@ def main():
     #   functions as needed                            #
     ####################################################
 
+    # should the socket s be client_socket?
+
     file_name = ''
     s = socket_setup()
     client_message, client_address = s.recvfrom(MAX_UDP_PACKET_SIZE)
@@ -125,7 +127,6 @@ def socket_setup():
 ####################################################
 
 
-
 def handle_client_message(message, file_name):
     """
     Takes in the message from the client and the file name. Calls the appropriate method to either read a request, handle an error, or read an acknowledgement.
@@ -159,6 +160,7 @@ def handle_read(message):
         return filename, b'\x00\x05\x00\x01File not found.\x00' 
     return filename, b'\x00\x03\x00\x01' + get_file_block(filename, 1)
 
+
 def handle_write(message):
     """
     Takes a bytes obect that does not contain opcode and get the file
@@ -169,8 +171,6 @@ def handle_write(message):
     :author: Jonny Keane
     """
     filename = message[:message.find(b'\x00')]
-    #do we have to check that the file is not already in the directory?
-    file = open(filename, "wb")
     return filename, b'\x00\x04\x00\x01'
 
 
@@ -186,6 +186,7 @@ def handle_data(message, file_name):
     """
     block_number = message[:2]
     block_data = message[2:]
+    # is the boolean helpful for exiting the program?
     return bool(len(block_data) == 512), b'\x00\x03' + block_number
 
 
@@ -222,10 +223,6 @@ def handle_error(message):
     print('Error code: ', err_code)
     print('Error message: ', err_msg)
     quit()
-
-
-def send_ack(byte):
-    return
 
 
 main()
