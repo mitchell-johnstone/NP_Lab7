@@ -131,12 +131,18 @@ def handle_client_message(message, file_name):
     return
 
 
-def handle_read(data_socket):
-    rrq = data_socket.recvfrom()
-    opcode = rrq[:2]
-    rrq_no_opcode = rrq[2:]
-    filename = rrq_no_opcode[:rrq_no_opcode.find('\x00')]
-    mode 
+def handle_read(message):
+    """
+    Take a bytes object that does not contain the opcode and get 
+    the file and the first block based of the file based on the 
+    message's filename.
+    :param message: bytes objects that 
+
+    """
+    filename = message[:message.find(b'\x00')]
+    if filename != working:
+        return b'', THE_ERROR_CODE_ENTIRE_SEND
+    return filename, BLOCK_INFO + get_file_block(filename, 1)
 
 def handle_write():
     return
