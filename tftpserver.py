@@ -171,7 +171,7 @@ def handle_write(message):
     :author: Jonny Keane
     """
     filename = message[:message.find(b'\x00')]
-    return filename, b'\x00\x04\x00\x01'
+    return filename, b'\x00\x04\x00\x00'
 
 
 def handle_data(message, file_name):
@@ -187,7 +187,7 @@ def handle_data(message, file_name):
     block_number = message[:2]
     block_data = message[2:]
     # is the boolean helpful for exiting the program?
-    return bool(len(block_data) == 512), b'\x00\x03' + block_number
+    return bool(len(block_data) == 512), b'\x00\x04' + block_number
 
 
 def handle_ack(message, file_name):
