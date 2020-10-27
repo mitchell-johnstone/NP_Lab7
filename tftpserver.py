@@ -49,16 +49,11 @@ def main():
     #   functions as needed                            #
     ####################################################
 
-    # should the socket s be client_socket?
-
-    file_name = ''
-    s = socket_setup()
-    client_message, client_address = s.recvfrom(MAX_UDP_PACKET_SIZE)
-    response_message = b'temp'
-    while response_message:
-        response_message, file_name = handle_client_message(client_message, file_name)
-        s.sendto(response_message, (client_address, TFTP_PORT))
-        client_message, client_address = s.recvfrom(MAX_UDP_PACKET_SIZE)
+    file_name, response_message, terminate = '', b'temp', False
+    while response_message and not terminate:
+        client_message, client_address = client_socket.recvfrom(MAX_UDP_PACKET_SIZE)
+        response_message, file_name, terminate = handle_client_message(client_message, file_name)
+        client_socket.sendto(response_message, client_address)
 
     ####################################################
     # Your code ends here                              #
@@ -135,15 +130,20 @@ def handle_client_message(message, file_name):
     :return: the message, modified by the handle_ack or handle_read method, and the file name, which may be modified by the handle_read method.
     :author: Kayla Yakimisky
     """
-    opcode = message[:2]
+    opcode = int.from_bytes(message[:2], 'big')
     message = message[2:]
+    terminate = False
     if opcode == 1:
-        handle_read(message)
-    elif opcode == 5:
-        handle_error(message)
+        file_name, message = handle_read(message)
+    elif opcode == 2:
+        file_name, message = handle_write(message)
+    elif opcode == 3:
+        terminate, message = handle_data(message, file_name)
     elif opcode == 4:
-        message = handle_ack(message, file_name)
-    return message, file_name
+        terminate, message = handle_ack(message, file_name)
+    elif opcode == 5:
+        terminate, message = handle_error(message)
+    return message, file_name, terminate
 
 
 def handle_read(message):
@@ -155,10 +155,11 @@ def handle_read(message):
     :return: the filename read from and the next request line
     :author: Jonny Keane
     """
-    filename = message[:message.find(b'\x00')]
-    if os.path.isfile(filename.decode()):
-        return filename, b'\x00\x05\x00\x01File not found.\x00' 
-    return filename, b'\x00\x03\x00\x01' + get_file_block(filename, 1)
+    file_name = message[:message.find(b'\x00')].decode()
+    if os.path.isfile(file_name):
+        print('Received read request for file ', file_name, ' and sending block 1')
+        return file_name, b'\x00\x03\x00\x01' + get_file_block(file_name, 1)
+    return file_name, b'\x00\x05\x00\x01File not found.\x00'
 
 
 def handle_write(message):
@@ -170,8 +171,9 @@ def handle_write(message):
     :return: the filename to write to and the next request line
     :author: Jonny Keane
     """
-    filename = message[:message.find(b'\x00')]
-    return filename, b'\x00\x04\x00\x00'
+    file_name = message[:message.find(b'\x00')].decode()
+    print('Received write request for file ', file_name)
+    return file_name, b'\x00\x04\x00\x00'
 
 
 def handle_data(message, file_name):
@@ -180,14 +182,16 @@ def handle_data(message, file_name):
     Return the next request line and return if more requests are 
     follow.
     :param message: the request without an opcode as a bytes object
+    :param file_name: the name of the file to put the data into
     :return: boolean saying whether there are more requests to come
              and the next request line (acknowledgement)
     :author: Jonny Keane
     """
     block_number = message[:2]
     block_data = message[2:]
-    # is the boolean helpful for exiting the program?
-    return bool(len(block_data) == 512), b'\x00\x04' + block_number
+    put_file_block(file_name, block_data, int.from_bytes(block_number,'big'))
+    print('Received block ', block_number, ' for file ', file_name)
+    return bool(len(block_data) != 512), b'\x00\x04' + block_number
 
 
 def handle_ack(message, file_name):
@@ -199,30 +203,29 @@ def handle_ack(message, file_name):
     :return: data block- opcode of 3 + the next block num + the next data block
     :authors: Kayla Yakimisky, Mitchell Johnstone
     """
-    block_num = message
-    block_num_int = int.from_bytes(block_num, 'big')
+    block_num_int = int.from_bytes(message, 'big')
     num_blocks = get_file_block_count(file_name)
-    if block_num < num_blocks:
+    if block_num_int < num_blocks:
         block_num_int += 1
         next_block = get_file_block(file_name, block_num_int)
         block_num_out = block_num_int.to_bytes(2, 'big')
-        return b'\x00\x03' + block_num_out + next_block
-    return b''
+        print('Sent Block ', block_num_int, ' of file ', file_name)
+        return False, b'\x00\x03' + block_num_out + next_block
+    return True, b''
 
 
 def handle_error(message):
     """
     Takes in an error message, parses it into its opcode, error code, and error message. Prints the error code and message before quitting.
     :param message: the entire error message received
-    :return: void
+    :return: True, indicating the program should terminate
     :authors: Kayla Yakimisky, Mitchell Johnstone
     """
-    # opcode = message[]
     err_code = message[:2]
     err_msg = message[2:len(message) - 1]
     print('Error code: ', err_code)
     print('Error message: ', err_msg)
-    quit()
+    return True, b''
 
 
 main()
