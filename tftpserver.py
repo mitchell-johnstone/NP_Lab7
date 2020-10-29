@@ -10,14 +10,25 @@
 A Trivial File Transfer Protocol Server
 
 Introduction: (Describe the lab in your own words)
-
-
+This lab focussed on the Trivial File Transfer Protocol (TFTP), a protocol used to transfer files over a network.
+The transfer isn't secure, as the protocol only uses the bare-bones in order to transfer quickly the files, but it is
+simple and straighforward.
+This lab introduced the TFTP, and had us create a server for files. We were required to implement the GET command
+for the protocol, with the PUT command as extra. This meant that we had to receive messages from the sender,
+parse what the message is saying through helper methods, take the necessary actions, and formulate the correct
+response to send back.
 
 
 Summary: (Summarize your experience with the lab, what you learned, what you liked,what you disliked, and any suggestions you have for improvement)
-
-
-
+After reading through the RFC documentation for the TFTP, we split up the tasks, working simultaneously on the helper
+methods along with the larger methods to handle the message. After some debugging with bytes literal complications, the
+helper methods worked together well to both GET files and PUT files.
+From this lab, we learned about how the tftp is used to send files, and why it isn't recommended for general files, only
+trivial ones.
+And we learned that the "client_address" received from the udp recvfrom method is actually a tuple.
+And that b'\x00\x01' is not the same as 1.
+Ooooo, and that the TFTP port is reserved as 69. Not super secure, but gotta say, NICE.
+Also, we only used 1 loop, in the main method. It was fabulous.
 
 
 """
@@ -134,15 +145,18 @@ def handle_client_message(message, file_name):
     message = message[2:]
     terminate = False
     if opcode == 1:
-        file_name, message = handle_read(message)
+        terminate, file_name, message = handle_read(message)
     elif opcode == 2:
-        file_name, message = handle_write(message)
+        terminate, file_name, message = handle_write(message)
     elif opcode == 3:
         terminate, message = handle_data(message, file_name)
     elif opcode == 4:
         terminate, message = handle_ack(message, file_name)
     elif opcode == 5:
         terminate, message = handle_error(message)
+    else:
+        print('An illegal TFT operation was requested.')
+        terminate, message = True, b'\x00\x05\x00\x04Illegal TFTP operation\x00'
     return message, file_name, terminate
 
 
@@ -156,10 +170,12 @@ def handle_read(message):
     :author: Jonny Keane
     """
     file_name = message[:message.find(b'\x00')].decode()
+    print('Received read request for file ', file_name)
     if os.path.isfile(file_name):
-        print('Received read request for file ', file_name, ' and sending block 1')
-        return file_name, b'\x00\x03\x00\x01' + get_file_block(file_name, 1)
-    return file_name, b'\x00\x05\x00\x01File not found.\x00'
+        print('Sending block 1')
+        return False, file_name, b'\x00\x03\x00\x01' + get_file_block(file_name, 1)
+    print('However, the file was not found')
+    return True, file_name, b'\x00\x05\x00\x01File not found.\x00'
 
 
 def handle_write(message):
@@ -173,7 +189,10 @@ def handle_write(message):
     """
     file_name = message[:message.find(b'\x00')].decode()
     print('Received write request for file ', file_name)
-    return file_name, b'\x00\x04\x00\x00'
+    if os.path.isfile(file_name):
+        print('But the file already exists')
+        return True, file_name, b'\x00\x05\x00\x06File already exists.\x00'
+    return False, file_name, b'\x00\x04\x00\x00'
 
 
 def handle_data(message, file_name):
